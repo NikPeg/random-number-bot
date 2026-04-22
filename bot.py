@@ -49,11 +49,16 @@ HELP_TEXT = (
     "/random 500 — случайное число от 0 до 500\n"
     "/random 10 20 — случайное число от 10 до 20\n"
     "/alice — случайный стикер\n"
+    "/coffee — кофя · <i>кофе</i>\n"
+    "/who — случайный участник чата · <i>черемша, кто...</i>\n"
     "/how — как? · <i>как?, СССР, советский союз, в советском союзе</i>"
 )
 
 # cache of sticker file_ids, populated on first /alice call
 _alice_stickers: list[str] = []
+
+# chat_id -> {user_id -> display_name}
+_chat_members: dict[int, dict[int, str]] = {}
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -113,11 +118,48 @@ COFFEE_REPLIES = [
     "тупа я",
     "не могу жить без кофя",
     "кофя это моя жизнь",
+    "кофя и без печенько?",
 ]
 
 
 async def coffee(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(random.choice(COFFEE_REPLIES))
+
+
+def _track_member(update: Update) -> None:
+    if not update.message or not update.effective_user:
+        return
+    user = update.effective_user
+    if user.is_bot:
+        return
+    chat_id = update.message.chat_id
+    name = user.username or user.first_name
+    _chat_members.setdefault(chat_id, {})[user.id] = name
+
+
+async def track(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    _track_member(update)
+
+
+async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    _track_member(update)
+    chat_id = update.message.chat_id
+
+    try:
+        bot_member = await context.bot.get_chat_member(chat_id, context.bot.id)
+        is_admin = bot_member.status in ("administrator", "creator")
+    except Exception:
+        is_admin = False
+
+    if not is_admin:
+        return
+
+    members = _chat_members.get(chat_id, {})
+    if not members:
+        return
+
+    name = random.choice(list(members.values()))
+    await update.message.reply_text(name)
 
 
 async def alice(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -144,6 +186,8 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("random", rand))
     app.add_handler(CommandHandler("how", how))
     app.add_handler(CommandHandler("alice", alice))
+    app.add_handler(CommandHandler("coffee", coffee))
+    app.add_handler(CommandHandler("who", who))
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,
@@ -168,5 +212,11 @@ if __name__ == "__main__":
         filters.TEXT & filters.Regex(r"(?i)кофе"),
         coffee,
     ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)черемша[,\s]+кто"),
+        who,
+    ))
+    # track all messages to build member list for /who
+    app.add_handler(MessageHandler(filters.TEXT, track))
 
     app.run_polling()
