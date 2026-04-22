@@ -40,6 +40,7 @@ HOW_WORDS = [
 
 HELP_TEXT = (
     "<b>Команды:</b>\n"
+    "/double — случайное 2-значное число (10–99)\n"
     "/triple — случайное 3-значное число (100–999)\n"
     "/quadruple — случайное 4-значное число (1000–9999)\n"
     "/quintuple — случайное 5-значное число (10000–99999)\n"
@@ -63,6 +64,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(HELP_TEXT, parse_mode="HTML")
+
+
+async def double(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(str(random.randint(10, 99)))
 
 
 async def triple(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -118,6 +123,7 @@ if __name__ == "__main__":
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("double", double))
     app.add_handler(CommandHandler("triple", triple))
     app.add_handler(CommandHandler("quadruple", quadruple))
     app.add_handler(CommandHandler("quintuple", quintuple))
@@ -127,6 +133,22 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз"),
         how,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)дабл"),
+        double,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)трипл"),
+        triple,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)квадрипл|четырипл"),
+        quadruple,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)квинтипл|пентипл|пятерипл"),
+        quintuple,
     ))
 
     app.run_polling()
