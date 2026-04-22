@@ -17,6 +17,27 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
+HOW_WORDS = [
+    "тихо", "не спеша", "не дыша", "не шиша",
+    "не пержа", "не жужжа", "не гроша", "черемша", "не тужа", "лёжа", "дрожа",
+    "вороша", "без ковша", "со второго этажа", "без гаража", "без экипажа",
+    "без лишнего багажа", "без массажа", "без монтажа", "без камуфляжа",
+    "для антуража", "без знания падежа", "без мятежа",
+    "в три ножа", "два коржа", "без репортажа", "без стажа",
+    "с лицом вождя", "с душой моржа", "с повадкой ежа", "с запахом ржа",
+    "без суеты", "почти неслышно", "с лёгкой улыбкой", "с тёплым сердцем",
+    "медленно, но верно", "спокойно", "без лишних слов", "с внутренним светом",
+    "чуть задумчиво, но ясно", "с мягкой уверенностью", "бережно, как будто впервые",
+    "с тихой радостью", "неспешно, наслаждаясь моментом", "с добрым ожиданием",
+    "мягко, словно ветер", "светло, как утро", "вдумчиво",
+    "с теплом в глазах", "неторопливо, но глубоко", "с лёгкой надеждой",
+    "тихо, но наполненно", "с уверенностью в хорошем", "спокойно, принимая всё",
+    "с мягкой верой в лучшее", "чуть мечтательно", "с тихим счастьем",
+    "внутренне спокойно", "с ощущением уюта", "с нежной благодарностью",
+    "медленно, смакуя жизнь", "с тёплой тишиной внутри",
+    "с мягкой уверенностью в завтрашний день",
+]
+
 HELP_TEXT = (
     "Команды:\n"
     "/triple — случайное 3-значное число (100–999)\n"
@@ -24,7 +45,8 @@ HELP_TEXT = (
     "/quintuple — случайное 5-значное число (10000–99999)\n"
     "/random — случайное число до 1 000 000\n"
     "/random 500 — случайное число от 0 до 500\n"
-    "/random 10 20 — случайное число от 10 до 20"
+    "/random 10 20 — случайное число от 10 до 20\n"
+    "/how — как?"
 )
 
 
@@ -46,6 +68,11 @@ async def quadruple(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def quintuple(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(str(random.randint(10000, 99999)))
+
+
+async def how(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    words = random.sample(HOW_WORDS, 3)
+    await update.message.reply_text(", ".join(words))
 
 
 async def rand(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -79,5 +106,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("quadruple", quadruple))
     app.add_handler(CommandHandler("quintuple", quintuple))
     app.add_handler(CommandHandler("random", rand))
+    app.add_handler(CommandHandler("how", how))
 
     app.run_polling()
