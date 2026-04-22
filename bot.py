@@ -136,7 +136,7 @@ async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     user = random.choice(humans)
-    name = user.username or user.first_name
+    name = user.full_name
     await update.message.reply_text(name)
 
 
