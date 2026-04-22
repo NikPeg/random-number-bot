@@ -107,6 +107,19 @@ async def rand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(str(random.randint(lo, hi)))
 
 
+COFFEE_REPLIES = [
+    "с печенько",
+    "я не я без кофя",
+    "тупа я",
+    "не могу жить без кофя",
+    "кофя это моя жизнь",
+]
+
+
+async def coffee(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(random.choice(COFFEE_REPLIES))
+
+
 async def alice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global _alice_stickers
     if not _alice_stickers:
@@ -150,6 +163,10 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)квинтипл|пентипл|пятерипл"),
         quintuple,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)кофе"),
+        coffee,
     ))
 
     app.run_polling()
