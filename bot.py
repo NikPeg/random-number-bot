@@ -11,7 +11,7 @@ except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
 load_dotenv()
 
@@ -35,19 +35,19 @@ HOW_WORDS = [
     "с мягкой верой в лучшее", "чуть мечтательно", "с тихим счастьем",
     "внутренне спокойно", "с ощущением уюта", "с нежной благодарностью",
     "медленно, смакуя жизнь", "с тёплой тишиной внутри",
-    "с мягкой уверенностью", "с уверенностью в завтрашнем дне",
+    "с мягкой уверенностью", "с уверенностью в завтрашнем дне", "черемша",
 ]
 
 HELP_TEXT = (
-    "<b>Команды:</b>\n\n"
-    "<b>/triple</b> — случайное 3-значное число (100–999)\n"
-    "<b>/quadruple</b> — случайное 4-значное число (1000–9999)\n"
-    "<b>/quintuple</b> — случайное 5-значное число (10000–99999)\n"
-    "<b>/random</b> — случайное число до 1 000 000\n"
-    "<b>/random</b> 500 — случайное число от 0 до 500\n"
-    "<b>/random</b> 10 20 — случайное число от 10 до 20\n"
-    "<b>/alice</b> — случайный стикер\n"
-    "<b>/how</b> — как?"
+    "<b>Команды:</b>\n"
+    "/triple — случайное 3-значное число (100–999)\n"
+    "/quadruple — случайное 4-значное число (1000–9999)\n"
+    "/quintuple — случайное 5-значное число (10000–99999)\n"
+    "/random — случайное число до 1 000 000\n"
+    "/random 500 — случайное число от 0 до 500\n"
+    "/random 10 20 — случайное число от 10 до 20\n"
+    "/alice — случайный стикер\n"
+    "/how — как?"
 )
 
 # cache of sticker file_ids, populated on first /alice call
@@ -124,5 +124,9 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("random", rand))
     app.add_handler(CommandHandler("how", how))
     app.add_handler(CommandHandler("alice", alice))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз"),
+        how,
+    ))
 
     app.run_polling()
