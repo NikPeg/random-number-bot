@@ -6,16 +6,69 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Server
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to server
+      - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/random-number-bot
+            set -e
+
+            DEPLOY_DIR="$HOME/random-number-bot"
+            CONTAINER_FILTER="random-number-bot"
+
+            echo "=== Останавливаем старые контейнеры ==="
+            CONTAINER_IDS=$(docker ps -a --filter name=$CONTAINER_FILTER --format "{{.ID}}" || true)
+            if [ -n "$CONTAINER_IDS" ]; then
+              for CID in $CONTAINER_IDS; do
+                echo "  Снимаем restart policy с $CID..."
+                docker update --restart=no "$CID" 2>/dev/null || true
+
+                CID_PID=$(docker inspect "$CID" --format '{{.State.Pid}}' 2>/dev/null || echo "")
+                if [ -n "$CID_PID" ] && [ "$CID_PID" != "0" ]; then
+                  echo "  Убиваем PID $CID_PID..."
+                  sudo kill -9 "$CID_PID" 2>/dev/null || true
+                  sleep 1
+                fi
+
+                docker rm -f "$CID" 2>/dev/null || true
+              done
+              sleep 2
+            fi
+
+            # Финальная проверка
+            if docker ps -a --filter name=$CONTAINER_FILTER --format "{{.Names}}" | grep -q .; then
+              echo "Контейнер всё ещё существует, экстренное удаление..."
+              docker ps -a --filter name=$CONTAINER_FILTER --format "{{.ID}}" | xargs -r docker rm -f
+              sleep 2
+            fi
+            echo "✅ Старые контейнеры удалены"
+
+            echo "=== Обновляем код ==="
+            cd "$DEPLOY_DIR"
             git pull origin main
-            printf "BOT_TOKEN=%s\nALICE_STICKER_PACK=%s\n" "${{ secrets.BOT_TOKEN }}" "${{ secrets.ALICE_STICKER_PACK }}" > .env
+
+            echo "=== Пишем .env ==="
+            {
+              echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}"
+              echo "ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}"
+            } > .env
+
+            echo "=== Запускаем контейнер ==="
             docker compose up --build -d
+
+            echo "=== Проверяем запуск ==="
+            sleep 5
+            if docker ps --filter name=$CONTAINER_FILTER --filter status=running | grep -q .; then
+              echo "✅ Бот запущен"
+              docker ps --filter name=$CONTAINER_FILTER
+              docker logs $(docker ps --filter name=$CONTAINER_FILTER --format "{{.ID}}") --tail=20
+            else
+              echo "❌ Контейнер не запустился!"
+              docker logs $(docker ps -a --filter name=$CONTAINER_FILTER --format "{{.ID}}") --tail=50 2>&1 || true
+              exit 1
+            fi
