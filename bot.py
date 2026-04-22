@@ -55,7 +55,7 @@ _alice_stickers: list[str] = []
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Я генерирую случайные числа.\n\n" + HELP_TEXT)
+    await update.message.reply_text("Привет! Я тихо, спокойно, не спеша, генерирую случайные числа\n\n" + HELP_TEXT)
 
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
