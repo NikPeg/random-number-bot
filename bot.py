@@ -131,7 +131,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("how", how))
     app.add_handler(CommandHandler("alice", alice))
     app.add_handler(MessageHandler(
-        filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?"),
+        filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,
     ))
     app.add_handler(MessageHandler(
