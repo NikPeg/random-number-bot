@@ -40,15 +40,15 @@ HOW_WORDS = [
 
 HELP_TEXT = (
     "<b>Команды:</b>\n"
-    "/double — случайное 2-значное число (10–99)\n"
-    "/triple — случайное 3-значное число (100–999)\n"
-    "/quadruple — случайное 4-значное число (1000–9999)\n"
-    "/quintuple — случайное 5-значное число (10000–99999)\n"
+    "/double — случайное 2-значное число (10–99) · <i>дабл</i>\n"
+    "/triple — случайное 3-значное число (100–999) · <i>трипл</i>\n"
+    "/quadruple — случайное 4-значное число (1000–9999) · <i>квадрипл, четырипл</i>\n"
+    "/quintuple — случайное 5-значное число (10000–99999) · <i>квинтипл, пентипл, пятерипл</i>\n"
     "/random — случайное число до 1 000 000\n"
     "/random 500 — случайное число от 0 до 500\n"
     "/random 10 20 — случайное число от 10 до 20\n"
     "/alice — случайный стикер\n"
-    "/how — как?"
+    "/how — как? · <i>как?, СССР, советский союз, в советском союзе</i>"
 )
 
 # cache of sticker file_ids, populated on first /alice call
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("how", how))
     app.add_handler(CommandHandler("alice", alice))
     app.add_handler(MessageHandler(
-        filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз"),
+        filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?"),
         how,
     ))
     app.add_handler(MessageHandler(
