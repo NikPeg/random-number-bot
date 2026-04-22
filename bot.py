@@ -131,12 +131,15 @@ async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception:
         return
 
-    humans = [m.user for m in admins if not m.user.is_bot]
+    humans = [m for m in admins if not m.user.is_bot]
     if not humans:
         return
 
-    user = random.choice(humans)
-    name = user.full_name
+    member = random.choice(humans)
+    name = member.user.full_name
+    title = getattr(member, "custom_title", None)
+    if title:
+        name += f" ({title})"
     await update.message.reply_text(name)
 
 
