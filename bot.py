@@ -46,8 +46,12 @@ HELP_TEXT = (
     "/random — случайное число до 1 000 000\n"
     "/random 500 — случайное число от 0 до 500\n"
     "/random 10 20 — случайное число от 10 до 20\n"
-    "/how — как?"
+    "/how — как?\n"
+    "/alice — случайный стикер"
 )
+
+# cache of sticker file_ids, populated on first /alice call
+_alice_stickers: list[str] = []
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -94,6 +98,15 @@ async def rand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(str(random.randint(lo, hi)))
 
 
+async def alice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global _alice_stickers
+    if not _alice_stickers:
+        pack_name = os.getenv("ALICE_STICKER_PACK", "inthenameofAlice")
+        sticker_set = await context.bot.get_sticker_set(pack_name)
+        _alice_stickers = [s.file_id for s in sticker_set.stickers]
+    await update.message.reply_sticker(random.choice(_alice_stickers))
+
+
 if __name__ == "__main__":
     token = os.getenv("BOT_TOKEN")
     if not token:
@@ -107,5 +120,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("quintuple", quintuple))
     app.add_handler(CommandHandler("random", rand))
     app.add_handler(CommandHandler("how", how))
+    app.add_handler(CommandHandler("alice", alice))
 
     app.run_polling()

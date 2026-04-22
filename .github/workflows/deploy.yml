@@ -17,5 +17,5 @@ jobs:
           script: |
             cd ~/random-number-bot
             git pull origin main
-            echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" > .env
+            printf "BOT_TOKEN=%s\nALICE_STICKER_PACK=%s\n" "${{ secrets.BOT_TOKEN }}" "${{ secrets.ALICE_STICKER_PACK }}" > .env
             docker compose up --build -d
