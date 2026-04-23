@@ -52,6 +52,7 @@ HELP_TEXT = (
     "/alice — случайный стикер\n"
     "/coffee — кофя · <i>кофе</i>\n"
     "/who — случайный участник чата · <i>черемша, кто...</i>\n"
+    "/hurry — черемша · <i>спеша</i>\n"
     "/how — как? · <i>как?, СССР, советский союз, в советском союзе</i>"
 )
 
@@ -140,6 +141,10 @@ COFFEE_REPLIES = [
 
 async def coffee(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(random.choice(COFFEE_REPLIES))
+
+
+async def hurry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("черемша")
 
 
 async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -240,6 +245,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("how", how))
     app.add_handler(CommandHandler("alice", alice))
     app.add_handler(CommandHandler("coffee", coffee))
+    app.add_handler(CommandHandler("hurry", hurry))
     app.add_handler(CommandHandler("who", who))
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
@@ -269,8 +275,12 @@ if __name__ == "__main__":
         coffee,
     ))
     app.add_handler(MessageHandler(
-        filters.TEXT & filters.Regex(r"(?i)черемша[,\s]+кто"),
+        filters.TEXT & filters.Regex(r"(?i)кто"),
         who,
+    ))
+    app.add_handler(MessageHandler(
+        filters.TEXT & filters.Regex(r"(?i)спеша"),
+        hurry,
     ))
 
     app.run_polling()
