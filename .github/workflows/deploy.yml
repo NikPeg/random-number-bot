@@ -57,6 +57,7 @@ jobs:
               echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}"
               echo "ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}"
               echo "ADMIN_ID=${{ secrets.ADMIN_ID }}"
+              echo "DELETE_CHANNEL_MESSAGES=${{ secrets.DELETE_CHANNEL_MESSAGES }}"
             } > .env
 
             echo "=== Запускаем контейнер ==="

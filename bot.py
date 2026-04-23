@@ -184,6 +184,15 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     _save_chats(chats)
 
 
+async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message or not update.message.sender_chat:
+        return
+    try:
+        await update.message.delete()
+    except Exception:
+        pass  # бот не админ или нет прав — молча игнорируем
+
+
 async def track_chat_on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Fallback: register chat on first message if not yet known."""
     if not update.message:
@@ -250,6 +259,9 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_chat_on_message), group=1)
+
+    if os.getenv("DELETE_CHANNEL_MESSAGES", "").lower() in ("1", "true", "yes"):
+        app.add_handler(MessageHandler(filters.ALL, delete_channel_messages), group=2)
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,
