@@ -11,7 +11,7 @@ except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, ChatMemberHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 load_dotenv()
 
@@ -56,6 +56,9 @@ HELP_TEXT = (
 
 # cache of sticker file_ids, populated on first /alice call
 _alice_stickers: list[str] = []
+
+# chat_id -> chat_title
+_known_chats: dict[int, str] = {}
 
 
 
@@ -143,6 +146,32 @@ async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(name)
 
 
+async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Track chats where the bot is added or removed."""
+    result = update.my_chat_member
+    if not result:
+        return
+    chat = result.chat
+    new_status = result.new_chat_member.status
+    if new_status in ("member", "administrator"):
+        _known_chats[chat.id] = chat.title or chat.full_name or str(chat.id)
+    elif new_status in ("left", "kicked"):
+        _known_chats.pop(chat.id, None)
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    admin_id = int(os.getenv("ADMIN_ID", "0"))
+    if update.effective_user.id != admin_id:
+        return
+
+    count = len(_known_chats)
+    titles = list(_known_chats.values())[:5]
+    text = f"Чатов: {count}\n"
+    if titles:
+        text += "\n".join(f"• {t}" for t in titles)
+    await update.message.reply_text(text)
+
+
 async def alice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global _alice_stickers
     if not _alice_stickers:
@@ -169,6 +198,8 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("alice", alice))
     app.add_handler(CommandHandler("coffee", coffee))
     app.add_handler(CommandHandler("who", who))
+    app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,

@@ -56,6 +56,7 @@ jobs:
             {
               echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}"
               echo "ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}"
+              echo "ADMIN_ID=${{ secrets.ADMIN_ID }}"
             } > .env
 
             echo "=== Запускаем контейнер ==="
