@@ -162,6 +162,7 @@ async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Fires when bot is added/removed from a chat."""
     result = update.my_chat_member
     if not result:
         return
@@ -175,6 +176,28 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         }
     elif new_status in ("left", "kicked"):
         chats.pop(str(chat.id), None)
+    _save_chats(chats)
+
+
+async def track_chat_on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Fallback: register chat on first message if not yet known."""
+    if not update.message:
+        return
+    chat = update.message.chat
+    if chat.type == "private":
+        return
+    chats = _load_chats()
+    if str(chat.id) in chats:
+        return
+    try:
+        bot_member = await context.bot.get_chat_member(chat.id, context.bot.id)
+        is_admin = bot_member.status in ("administrator", "creator")
+    except Exception:
+        is_admin = False
+    chats[str(chat.id)] = {
+        "title": chat.title or str(chat.id),
+        "is_admin": is_admin,
+    }
     _save_chats(chats)
 
 
@@ -220,6 +243,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("who", who))
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_chat_on_message), group=1)
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,
