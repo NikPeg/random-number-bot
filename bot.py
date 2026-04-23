@@ -287,7 +287,7 @@ if __name__ == "__main__":
         coffee,
     ))
     app.add_handler(MessageHandler(
-        filters.TEXT & filters.Regex(r"(?i)кто"),
+        filters.TEXT & filters.Regex(r"(?i)\bкто\b"),
         who,
     ))
     app.add_handler(MessageHandler(
