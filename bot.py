@@ -1,4 +1,5 @@
 import asyncio
+import json
 import random
 import logging
 import os
@@ -57,8 +58,22 @@ HELP_TEXT = (
 # cache of sticker file_ids, populated on first /alice call
 _alice_stickers: list[str] = []
 
-# chat_id -> chat_title
-_known_chats: dict[int, str] = {}
+# persistent chat storage
+DATA_FILE = "/app/data/chats.json"
+
+
+def _load_chats() -> dict:
+    try:
+        with open(DATA_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_chats(chats: dict) -> None:
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+    with open(DATA_FILE, "w") as f:
+        json.dump(chats, f, ensure_ascii=False, indent=2)
 
 
 
@@ -147,16 +162,20 @@ async def who(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Track chats where the bot is added or removed."""
     result = update.my_chat_member
     if not result:
         return
     chat = result.chat
     new_status = result.new_chat_member.status
+    chats = _load_chats()
     if new_status in ("member", "administrator"):
-        _known_chats[chat.id] = chat.title or chat.full_name or str(chat.id)
+        chats[str(chat.id)] = {
+            "title": chat.title or chat.full_name or str(chat.id),
+            "is_admin": new_status == "administrator",
+        }
     elif new_status in ("left", "kicked"):
-        _known_chats.pop(chat.id, None)
+        chats.pop(str(chat.id), None)
+    _save_chats(chats)
 
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -164,12 +183,13 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.id != admin_id:
         return
 
-    count = len(_known_chats)
-    titles = list(_known_chats.values())[:5]
-    text = f"Чатов: {count}\n"
-    if titles:
-        text += "\n".join(f"• {t}" for t in titles)
-    await update.message.reply_text(text)
+    chats = _load_chats()
+    count = len(chats)
+    lines = [f"Чатов: {count}\n"]
+    for entry in list(chats.values())[:5]:
+        role = "админ" if entry.get("is_admin") else "участник"
+        lines.append(f"• {entry['title']} ({role})")
+    await update.message.reply_text("\n".join(lines))
 
 
 async def alice(update: Update, context: ContextTypes.DEFAULT_TYPE):
