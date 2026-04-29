@@ -187,6 +187,13 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.sender_chat:
         return
+    allowed_raw = os.getenv("ALLOWED_CHANNEL_ID", "").strip()
+    try:
+        allowed_id = int(allowed_raw) if allowed_raw else None
+    except ValueError:
+        allowed_id = None
+    if allowed_id and update.message.sender_chat.id == allowed_id:
+        return
     try:
         await update.message.delete()
     except Exception:
