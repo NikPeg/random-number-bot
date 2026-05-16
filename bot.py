@@ -184,15 +184,27 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     _save_chats(chats)
 
 
+# chat_id -> linked_channel_id (None if no linked channel)
+_linked_channel_cache: dict[int, int | None] = {}
+
+
+async def _get_linked_channel(chat_id: int, bot) -> int | None:
+    if chat_id not in _linked_channel_cache:
+        try:
+            chat = await bot.get_chat(chat_id)
+            _linked_channel_cache[chat_id] = chat.linked_chat_id
+        except Exception:
+            _linked_channel_cache[chat_id] = None
+    return _linked_channel_cache[chat_id]
+
+
 async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.sender_chat:
         return
-    allowed_raw = os.getenv("ALLOWED_CHANNEL_ID", "").strip()
-    try:
-        allowed_id = int(allowed_raw) if allowed_raw else None
-    except ValueError:
-        allowed_id = None
-    if allowed_id and update.message.sender_chat.id == allowed_id:
+    chat_id = update.message.chat_id
+    sender_id = update.message.sender_chat.id
+    linked = await _get_linked_channel(chat_id, context.bot)
+    if linked and sender_id == linked:
         return
     try:
         await update.message.delete()
