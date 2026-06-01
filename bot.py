@@ -213,6 +213,7 @@ async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Reply to messages from specific users (by ID or username)."""
     if not update.message or not update.effective_user:
         return
     reply_text = os.getenv("REPLY_TEXT", "").strip()
