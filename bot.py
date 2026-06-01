@@ -212,6 +212,21 @@ async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_
         pass  # бот не админ или нет прав — молча игнорируем
 
 
+async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message or not update.effective_user:
+        return
+    raw_ids = os.getenv("REPLY_USER_IDS", "").strip()
+    reply_text = os.getenv("REPLY_TEXT", "").strip()
+    if not raw_ids or not reply_text:
+        return
+    try:
+        user_ids = {int(uid.strip()) for uid in raw_ids.split(",") if uid.strip()}
+    except ValueError:
+        return
+    if update.effective_user.id in user_ids:
+        await update.message.reply_text(reply_text)
+
+
 async def track_chat_on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Fallback: register chat on first message if not yet known."""
     if not update.message:
@@ -278,6 +293,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_chat_on_message), group=1)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_reply), group=1)
 
     if os.getenv("DELETE_CHANNEL_MESSAGES", "").lower() in ("1", "true", "yes"):
         app.add_handler(MessageHandler(filters.ALL, delete_channel_messages), group=2)
