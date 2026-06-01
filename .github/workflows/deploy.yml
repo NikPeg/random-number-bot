@@ -11,10 +11,19 @@ jobs:
     steps:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ALICE_STICKER_PACK: ${{ secrets.ALICE_STICKER_PACK }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+          DELETE_CHANNEL_MESSAGES: ${{ secrets.DELETE_CHANNEL_MESSAGES }}
+          REPLY_USER_IDS: ${{ secrets.REPLY_USER_IDS }}
+          REPLY_USERNAMES: ${{ secrets.REPLY_USERNAMES }}
+          REPLY_TEXT: ${{ secrets.REPLY_TEXT }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: BOT_TOKEN,ALICE_STICKER_PACK,ADMIN_ID,DELETE_CHANNEL_MESSAGES,REPLY_USER_IDS,REPLY_USERNAMES,REPLY_TEXT
           script: |
             set -e
 
@@ -40,7 +49,6 @@ jobs:
               sleep 2
             fi
 
-            # Финальная проверка
             if docker ps -a --filter name=$CONTAINER_FILTER --format "{{.Names}}" | grep -q .; then
               echo "Контейнер всё ещё существует, экстренное удаление..."
               docker ps -a --filter name=$CONTAINER_FILTER --format "{{.ID}}" | xargs -r docker rm -f
@@ -53,15 +61,15 @@ jobs:
             git pull origin main
 
             echo "=== Пишем .env ==="
-            cat > .env << 'ENVEOF'
-BOT_TOKEN=${{ secrets.BOT_TOKEN }}
-ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}
-ADMIN_ID=${{ secrets.ADMIN_ID }}
-DELETE_CHANNEL_MESSAGES=${{ secrets.DELETE_CHANNEL_MESSAGES }}
-REPLY_USER_IDS=${{ secrets.REPLY_USER_IDS }}
-REPLY_USERNAMES=${{ secrets.REPLY_USERNAMES }}
-REPLY_TEXT=${{ secrets.REPLY_TEXT }}
-ENVEOF
+            {
+              printf 'BOT_TOKEN=%s\n' "$BOT_TOKEN"
+              printf 'ALICE_STICKER_PACK=%s\n' "$ALICE_STICKER_PACK"
+              printf 'ADMIN_ID=%s\n' "$ADMIN_ID"
+              printf 'DELETE_CHANNEL_MESSAGES=%s\n' "$DELETE_CHANNEL_MESSAGES"
+              printf 'REPLY_USER_IDS=%s\n' "$REPLY_USER_IDS"
+              printf 'REPLY_USERNAMES=%s\n' "$REPLY_USERNAMES"
+              printf 'REPLY_TEXT=%s\n' "$REPLY_TEXT"
+            } > .env
 
             echo "=== Запускаем контейнер ==="
             docker compose up --build -d
