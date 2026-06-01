@@ -234,8 +234,10 @@ async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     if not matched:
         raw_usernames = os.getenv("REPLY_USERNAMES", "").strip()
+        logging.info(f"auto_reply: user=@{user.username} id={user.id} | REPLY_USERNAMES={raw_usernames!r} | REPLY_TEXT={reply_text!r}")
         if raw_usernames and user.username:
             usernames = {u.strip().lstrip("@").lower() for u in raw_usernames.split(",") if u.strip()}
+            logging.info(f"auto_reply: checking @{user.username.lower()!r} in {usernames}")
             if user.username.lower() in usernames:
                 matched = True
                 logging.info(f"auto_reply matched by username @{user.username} — id: {user.id}")

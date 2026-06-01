@@ -53,15 +53,15 @@ jobs:
             git pull origin main
 
             echo "=== Пишем .env ==="
-            {
-              echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}"
-              echo "ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}"
-              echo "ADMIN_ID=${{ secrets.ADMIN_ID }}"
-              echo "DELETE_CHANNEL_MESSAGES=${{ secrets.DELETE_CHANNEL_MESSAGES }}"
-              echo "REPLY_USER_IDS=${{ secrets.REPLY_USER_IDS }}"
-              echo "REPLY_USERNAMES=${{ secrets.REPLY_USERNAMES }}"
-              echo "REPLY_TEXT=${{ secrets.REPLY_TEXT }}"
-            } > .env
+            cat > .env << 'ENVEOF'
+BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+ALICE_STICKER_PACK=${{ secrets.ALICE_STICKER_PACK }}
+ADMIN_ID=${{ secrets.ADMIN_ID }}
+DELETE_CHANNEL_MESSAGES=${{ secrets.DELETE_CHANNEL_MESSAGES }}
+REPLY_USER_IDS=${{ secrets.REPLY_USER_IDS }}
+REPLY_USERNAMES=${{ secrets.REPLY_USERNAMES }}
+REPLY_TEXT=${{ secrets.REPLY_TEXT }}
+ENVEOF
 
             echo "=== Запускаем контейнер ==="
             docker compose up --build -d
