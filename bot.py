@@ -312,7 +312,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(track_chats, ChatMemberHandler.MY_CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, track_chat_on_message), group=1)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_reply), group=1)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_reply), group=2)
 
     if os.getenv("DELETE_CHANNEL_MESSAGES", "").lower() in ("1", "true", "yes"):
         app.add_handler(MessageHandler(filters.ALL, delete_channel_messages), group=2)
