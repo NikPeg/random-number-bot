@@ -59,6 +59,7 @@ jobs:
               echo "ADMIN_ID=${{ secrets.ADMIN_ID }}"
               echo "DELETE_CHANNEL_MESSAGES=${{ secrets.DELETE_CHANNEL_MESSAGES }}"
               echo "REPLY_USER_IDS=${{ secrets.REPLY_USER_IDS }}"
+              echo "REPLY_USERNAMES=${{ secrets.REPLY_USERNAMES }}"
               echo "REPLY_TEXT=${{ secrets.REPLY_TEXT }}"
             } > .env
 

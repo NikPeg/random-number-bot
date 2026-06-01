@@ -215,15 +215,31 @@ async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_
 async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.effective_user:
         return
-    raw_ids = os.getenv("REPLY_USER_IDS", "").strip()
     reply_text = os.getenv("REPLY_TEXT", "").strip()
-    if not raw_ids or not reply_text:
+    if not reply_text:
         return
-    try:
-        user_ids = {int(uid.strip()) for uid in raw_ids.split(",") if uid.strip()}
-    except ValueError:
-        return
-    if update.effective_user.id in user_ids:
+
+    user = update.effective_user
+    matched = False
+
+    raw_ids = os.getenv("REPLY_USER_IDS", "").strip()
+    if raw_ids:
+        try:
+            user_ids = {int(uid.strip()) for uid in raw_ids.split(",") if uid.strip()}
+            if user.id in user_ids:
+                matched = True
+        except ValueError:
+            pass
+
+    if not matched:
+        raw_usernames = os.getenv("REPLY_USERNAMES", "").strip()
+        if raw_usernames and user.username:
+            usernames = {u.strip().lstrip("@").lower() for u in raw_usernames.split(",") if u.strip()}
+            if user.username.lower() in usernames:
+                matched = True
+                logging.info(f"auto_reply matched by username @{user.username} — id: {user.id}")
+
+    if matched:
         await update.message.reply_text(reply_text)
 
 
