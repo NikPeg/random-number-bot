@@ -27,6 +27,11 @@ jobs:
           script: |
             set -e
 
+            # Устанавливаем docker compose plugin если нет
+            if ! docker compose version &>/dev/null; then
+              apt-get update -qq && apt-get install -y -qq docker-compose-plugin
+            fi
+
             DEPLOY_DIR="$HOME/random-number-bot"
             CONTAINER_FILTER="random-number-bot"
 
