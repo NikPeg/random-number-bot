@@ -29,7 +29,10 @@ jobs:
 
             # Устанавливаем docker compose plugin если нет
             if ! docker compose version &>/dev/null; then
-              apt-get update -qq && apt-get install -y -qq docker-compose-plugin
+              mkdir -p /usr/local/lib/docker/cli-plugins
+              curl -SL "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
+                -o /usr/local/lib/docker/cli-plugins/docker-compose
+              chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
             fi
 
             DEPLOY_DIR="$HOME/random-number-bot"
