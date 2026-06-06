@@ -57,6 +57,9 @@ jobs:
             echo "✅ Старые контейнеры удалены"
 
             echo "=== Обновляем код ==="
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              git clone https://github.com/NikPeg/random-number-bot.git "$DEPLOY_DIR"
+            fi
             cd "$DEPLOY_DIR"
             git pull origin main
 
