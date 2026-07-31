@@ -59,8 +59,10 @@ HELP_TEXT = (
 # cache of sticker file_ids, populated on first /alice call
 _alice_stickers: list[str] = []
 
-# persistent chat storage
-DATA_FILE = "/app/data/chats.json"
+# persistent storage (volume: ./data → /app/data)
+DATA_DIR = "/app/data"
+DATA_FILE = f"{DATA_DIR}/chats.json"
+REPLY_USERS_FILE = f"{DATA_DIR}/reply_users.json"
 
 
 def _load_chats() -> dict:
@@ -72,9 +74,42 @@ def _load_chats() -> dict:
 
 
 def _save_chats(chats: dict) -> None:
-    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(chats, f, ensure_ascii=False, indent=2)
+
+
+def _load_reply_users() -> dict[str, int]:
+    """username (lowercase, no @) → telegram user id."""
+    try:
+        with open(REPLY_USERS_FILE) as f:
+            data = json.load(f)
+        return {str(k).lower(): int(v) for k, v in data.items()}
+    except (FileNotFoundError, json.JSONDecodeError, TypeError, ValueError):
+        return {}
+
+
+def _save_reply_users(users: dict[str, int]) -> None:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(REPLY_USERS_FILE, "w") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+
+def _remember_reply_user(username: str, user_id: int) -> None:
+    key = username.lstrip("@").lower()
+    users = _load_reply_users()
+    if users.get(key) == user_id:
+        return
+    users[key] = user_id
+    _save_reply_users(users)
+    logging.info(f"reply_users: saved @{key} → {user_id}")
+
+
+def _parse_reply_usernames() -> set[str]:
+    raw = os.getenv("REPLY_USERNAMES", "").strip()
+    if not raw:
+        return set()
+    return {u.strip().lstrip("@").lower() for u in raw.split(",") if u.strip()}
 
 
 
@@ -213,34 +248,42 @@ async def delete_channel_messages(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Reply to messages from specific users (by ID or username)."""
+    """Reply to messages from specific users (by ID, username, or previously learned ID)."""
     if not update.message or not update.effective_user:
         return
+
+    user = update.effective_user
+    usernames = _parse_reply_usernames()
+
+    # Learn id as soon as a watched username writes (even before REPLY_TEXT is set)
+    if user.username and user.username.lower() in usernames:
+        _remember_reply_user(user.username, user.id)
+
     reply_text = os.getenv("REPLY_TEXT", "").strip()
     if not reply_text:
         return
 
-    user = update.effective_user
     matched = False
 
     raw_ids = os.getenv("REPLY_USER_IDS", "").strip()
     if raw_ids:
         try:
-            user_ids = {int(uid.strip()) for uid in raw_ids.split(",") if uid.strip()}
-            if user.id in user_ids:
+            env_ids = {int(uid.strip()) for uid in raw_ids.split(",") if uid.strip()}
+            if user.id in env_ids:
                 matched = True
         except ValueError:
             pass
 
-    if not matched:
-        raw_usernames = os.getenv("REPLY_USERNAMES", "").strip()
-        logging.info(f"auto_reply: user=@{user.username} id={user.id} | REPLY_USERNAMES={raw_usernames!r} | REPLY_TEXT={reply_text!r}")
-        if raw_usernames and user.username:
-            usernames = {u.strip().lstrip("@").lower() for u in raw_usernames.split(",") if u.strip()}
-            logging.info(f"auto_reply: checking @{user.username.lower()!r} in {usernames}")
-            if user.username.lower() in usernames:
-                matched = True
-                logging.info(f"auto_reply matched by username @{user.username} — id: {user.id}")
+    if not matched and user.username and user.username.lower() in usernames:
+        matched = True
+        logging.info(f"auto_reply matched by username @{user.username} — id: {user.id}")
+
+    # id learned earlier for a username still in REPLY_USERNAMES
+    if not matched and usernames:
+        known_ids = {uid for name, uid in _load_reply_users().items() if name in usernames}
+        if user.id in known_ids:
+            matched = True
+            logging.info(f"auto_reply matched by saved id {user.id}")
 
     if matched:
         await update.message.reply_text(reply_text)
