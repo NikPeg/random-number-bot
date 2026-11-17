@@ -358,7 +358,7 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, auto_reply), group=2)
 
     if os.getenv("DELETE_CHANNEL_MESSAGES", "").lower() in ("1", "true", "yes"):
-        app.add_handler(MessageHandler(filters.ALL, delete_channel_messages), group=2)
+        app.add_handler(MessageHandler(filters.ALL, delete_channel_messages), group=3)
     app.add_handler(MessageHandler(
         filters.TEXT & filters.Regex(r"(?i)в советском союзе|советский союз|ссср|как\?|^как$"),
         how,
